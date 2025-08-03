@@ -1,6 +1,8 @@
 # Custom Dialogs for AHK2
 __customDialog - *v0.9*__
 
+**Example images below!**
+
 
 - Creates a highly customizable dialog box.
 - This function allows for extensive control over appearance, layout, and behavior,
@@ -78,3 +80,13 @@ customDialog({
 }, successPreset)
 ```
 
+
+
+
+## Example Images:
+
+![eg2](.github/eg2.png)
+
+![eg1](.github/eg1.png)
+![eg3](.github/eg3.png)
+![eg4](.github/eg4.png)
