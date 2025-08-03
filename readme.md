@@ -34,7 +34,7 @@ __customDialog - *v0.9*__
 
 ## Limitations / Future updates:
 
-- Limited keyboard controls: enter and escape, but no active button highlight (arrow keys might do this) 
+- Limited keyboard controls: enter and escape, but no active button highlight (arrow keys) 
 - "Fake" border around detail is drawn over top of detail control, future update will fix (just draw 4 1px lines lol)
 - Would be nice to have hover colour change on buttons (and exit button)
 - Add "forceFocus", which will toggle sound and refocus to dialog if the parent dialog ever is refocused whilst dialog still active
