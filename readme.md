@@ -3,7 +3,7 @@ __customDialog - *v1.8*__
 
 **Example images below!**
 
-**Example images below!**
+**Example images not showcasing full functionality!**
 
 
 - Creates a highly customizable dialog box.
