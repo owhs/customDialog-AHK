@@ -5,6 +5,8 @@ __customDialog - *v1.8*__
 
 **Example images not showcasing full functionality! (mainly inputs and progress bars)**
 
+Used in [FFMpeg Toolkit](https://github.com/owhs/FFMpeg-Toolkit)
+
 
 - Creates a highly customizable dialog box.
 - This function allows for extensive control over appearance, layout, and behavior,
