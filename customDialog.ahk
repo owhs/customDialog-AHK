@@ -3,12 +3,12 @@
 /*
  !             NAME  :   customDialog
  !           AUTHOR  :   OWHS
- !          VERSION  :   0.9
+ !          VERSION  :   1.8
  !      DESCRIPTION  :       
  :                       Creates a highly customizable, non-native GUI dialog box.
  :                       This function allows for extensive control over appearance, layout, and behavior,
  :                       making it a versatile replacement for standard message boxes.
- :                       It returns an object containing the user's choice and the GUI object itself.
+ :                       It returns an object containing the user's choice, input values, and methods to update the dialog.
 */
 
 /**
@@ -20,13 +20,11 @@
  * --------------------------------
  * ----- SETUP PROPERTIES -----
  * --------------------------------
- * 
- * -----------------------
+ * * -----------------------
  * -- Window & Layout --
  * -----------------------
  * -----------------------
- * 
- * @property {Integer} width            - The total width of the dialog window in pixels. Default: 600.
+ * * @property {Integer} width            - The total width of the dialog window in pixels. Default: 600.
  * @property {Integer} height           - A fixed height for the dialog. If 0 or omitted, height is calculated automatically based on content. Default: 0.
  * @property {Boolean} forceLegacyRadius- If true, forces the use of legacy (GDI) rounded corners even on Windows 11. Default: false.
  * @property {Integer} win11Radius      - The corner roundness value for Windows 11's DWM attribute. Default: 3.
@@ -38,12 +36,32 @@
  * -- Content & Text --
  * -----------------------
  * -----------------------
- * 
- * @property {String}  title            - The text displayed in the dialog's title bar. Default: "Alert".
+ * * @property {String}  title            - The text displayed in the dialog's title bar. Default: "Alert".
  * @property {String}  message          - The main message/text content of the dialog. Default: "Message".
  * @property {String}  detail           - Optional supplementary text displayed in a read-only, scrollable box. Default: "".
  * @property {Integer} detailRows       - The number of visible text rows for the `detail` box. Default: 9.
  * @property {String}  icon             - A single character/emoji to display as an icon to the left of the message. Default: "".
+ *
+ * -----------------------
+ * -- Input Mode --
+ * -----------------------
+ * -----------------------
+ * @property {Boolean|String} input     - If set to true or a string, enables Input Mode. If a string, it sets the default value.
+ * @property {String}  placeholder      - Placeholder text (ghost text) for the input box.
+ * @property {Boolean} maskInput        - If true, masks the input characters (for passwords).
+ *
+ * -----------------------
+ * -- Progress Bars (New) --
+ * -----------------------
+ * -----------------------
+ * @property {Integer} progress         - Set to a number (0-100) to enable the main progress bar.
+ * @property {String}  progressText     - Status text displayed above the main progress bar.
+ * @property {String}  progressSubText  - Smaller sub-status text displayed above the main progress bar (below status).
+ * @property {String}  progressColor    - Hex color for the main progress bar. Default: Matches `iconColor` or `fontColor`.
+ * @property {Integer} progress2        - Set to a number (0-100) to enable the secondary (sub) progress bar.
+ * @property {String}  progress2Text    - Status text displayed above the secondary progress bar.
+ * @property {String}  progress2SubText - Smaller sub-status text displayed above the secondary progress bar.
+ * @property {String}  progress2Color   - Hex color for the secondary progress bar. Default: "888888".
  *
  * -----------------------
  * -- Buttons --
@@ -60,17 +78,18 @@
  * -----------------------
  * - (Accepts 6-digit hex strings, e.g., "RRGGBB")
  * -----------------------
- * 
- * @property {String}  background       - The main background color of the dialog. Default: "1A1A1A".
- * @property {String}  backgroundAlt    - The background color for buttons and the `detail` box. Default: "0e0e0e".
+ * * @property {String}  background       - The main background color of the dialog. Default: "1A1A1A".
+ * @property {String}  backgroundAlt    - The background color for buttons, input, and the `detail` box. Default: "0e0e0e".
  * @property {String}  fontColor        - The default color for all text elements. Can be overridden by specific color properties. Default: "FFFFFF".
  * @property {String}  titleColor       - The color of the `title` text. Inherits `fontColor` if not set.
  * @property {String}  titlebarBG       - The background color of the title bar. Default: "0e0e0e".
  * @property {String}  messageColor     - The color of the `message` text. Inherits `fontColor` if not set.
  * @property {String}  detailColor      - The color of the `detail` text. Inherits `fontColor` if not set.
- * @property {String}  detailBorder     - The color of the border around the `detail` box and buttons. Default: "333333".
+ * @property {String}  detailBorder     - The color of the border around the boxes. Default: "333333".
+ * @property {String}  focusBorderColor - The color of the border when an input/detail box is focused. Default: Matches `iconColor` or `fontColor`.
  * @property {String}  iconColor        - The color of the `icon` character. Default: "FF4C4C".
  * @property {String}  buttonColor      - The color of the button text. Inherits `fontColor` if not set.
+ * @property {String}  buttonHoverColor - The background color of a button when hovered. Default: "333333".
  * @property {String}  exitColor        - The color of the 'x' close button text. Inherits `fontColor` if not set.
  * @property {String}  exitBG           - The background color of the 'x' close button. Default: "250d0d".
  *
@@ -84,17 +103,20 @@
  * @property {Boolean} popupAltSound    - If true, plays the "Asterisk" sound (0x10); if false, plays "Exclamation" (0x30). Default: false (plays 0x30).
  * @property {Integer} ownerHwnd        - The HWND of a window to own this dialog. Makes the dialog modal to its owner. Default: 0.
  * @property {Boolean} forceParent      - If true and `ownerHwnd` is 0, automatically sets the active window as the owner. Default: true.
- * @property {Boolean} waitForResponse  - If true, the script will pause until the dialog is closed. If false, the script continues, and the dialog runs asynchronously. Default: true.
+ * @property {Boolean} waitForResponse  - If true, the script will pause until the dialog is closed. If false, the script continues, and the dialog runs asynchronously. NOTE: Defaults to false if progress bars are present.
  * @property {Boolean} alwaysOnTop      - If true, the dialog stays on top of other non-topmost windows. Default: true.
  * @property {Boolean} noAltF4          - If true, disables the Alt+F4 hotkey for closing the window. Default: false.
+ * @property {Boolean} modal            - If true, disables the parent window while the dialog is open. This enforces focus, sounds, and flashing if the parent is clicked. Default: true.
  *
  * -----------------------
  * -- RETURN --
  * -----------------------
  * -----------------------
- * @returns {Object} An object with two properties:
- * - `value`: The text of the button clicked by the user (e.g., "OK", "Cancel"). Returns "" if closed via the 'x' button or Esc.
- * - `gui`: The AHK Gui object. This is useful for advanced manipulation when `waitForResponse` is false.
+ * @returns {Object} An object with properties:
+ * - `value`: The text of the button clicked by the user.
+ * - `input`: The text entered in the input box.
+ * - `gui`: The AHK Gui object.
+ * - `Update(percent, text, subText, barIndex)`: Method to update progress bars dynamically. `barIndex` 1 is main, 2 is sub.
  */
 customDialog(info := {}, defaults := {}) {
 
@@ -128,11 +150,27 @@ customDialog(info := {}, defaults := {}) {
         detailColor: defaults.HasProp("detailColor") && (defaults.detailColor || defaults.detailColor == "000000") ? defaults.detailColor : "",
         detailRows: defaults.HasProp("detailRows") && (defaults.detailRows || defaults.detailRows == 0) ? defaults.detailRows : 9,
 
+        ; Input Defaults
+        input: defaults.HasProp("input") ? defaults.input : false,
+        placeholder: defaults.HasProp("placeholder") ? defaults.placeholder : "",
+        maskInput: defaults.HasProp("maskInput") ? defaults.maskInput : false,
+
+        ; Progress Defaults
+        progress: defaults.HasProp("progress") && (Type(defaults.progress) == "Integer") ? defaults.progress : -1,
+        progressText: defaults.HasProp("progressText") ? defaults.progressText : "",
+        progressSubText: defaults.HasProp("progressSubText") ? defaults.progressSubText : "",
+        progressColor: defaults.HasProp("progressColor") ? defaults.progressColor : "",
+        progress2: defaults.HasProp("progress2") && (Type(defaults.progress2) == "Integer") ? defaults.progress2 : -1,
+        progress2Text: defaults.HasProp("progress2Text") ? defaults.progress2Text : "",
+        progress2SubText: defaults.HasProp("progress2SubText") ? defaults.progress2SubText : "",
+        progress2Color: defaults.HasProp("progress2Color") ? defaults.progress2Color : "",
+
         icon: defaults.HasProp("icon") && defaults.icon ? defaults.icon : "",
         iconColor: defaults.HasProp("iconColor") && (defaults.iconColor || defaults.iconColor == "000000") ? defaults.iconColor : "FF4C4C",
 
         buttons: defaults.HasProp("buttons") && defaults.buttons ? defaults.buttons : ["&OK"],
         buttonColor: defaults.HasProp("buttonColor") && (defaults.buttonColor || defaults.buttonColor == "000000") ? defaults.buttonColor : "",
+        buttonHoverColor: defaults.HasProp("buttonHoverColor") && (defaults.buttonHoverColor || defaults.buttonHoverColor == "000000") ? defaults.buttonHoverColor : "",
 
         exitEnabled: defaults.HasProp("exitEnabled") && defaults.exitEnabled == false ? false : true,
         exitWidth: defaults.HasProp("exitWidth") && defaults.exitWidth ? defaults.exitWidth : 40,
@@ -143,10 +181,11 @@ customDialog(info := {}, defaults := {}) {
         popupAltSound: defaults.HasProp("popupAltSound") && defaults.popupAltSound ? 0x10 : 0x30,
 
         ownerHwnd: defaults.HasProp("ownerHwnd") && defaults.ownerHwnd ? defaults.ownerHwnd : 0,
-        waitForResponse: defaults.HasProp("waitForResponse") && defaults.waitForResponse == false ? false : true,
-        alwaysOnTop: defaults.HasProp("alwaysOnTop") && defaults.alwaysOnTop ? true : false,
+        waitForResponse: defaults.HasProp("waitForResponse") ? defaults.waitForResponse : -1, ; -1 indicates "Auto"
+        alwaysOnTop: defaults.HasProp("alwaysOnTop") && defaults.alwaysOnTop == false ? false : true,
         forceParent: defaults.HasProp("forceParent") && defaults.forceParent == false ? false : true,
         noAltF4: defaults.HasProp("noAltF4") && defaults.noAltF4 ? true : false,
+        modal: defaults.HasProp("modal") && defaults.modal == false ? false : true,
     }
     ;#endregion
 
@@ -178,11 +217,34 @@ customDialog(info := {}, defaults := {}) {
     detailColor := info.HasProp("detailColor") && (info.detailColor || info.detailColor == "000000") ? info.detailColor : defaultProperties.detailColor ? defaultProperties.detailColor : fontColor
     detailRows := info.HasProp("detailRows") && (info.detailRows || info.detailRows == 0) ? info.detailRows : defaultProperties.detailRows
 
-    icon := info.HasProp("icon") && info.icon ? info.icon : defaultProperties.icon
+    ; Input Properties
+    hasInput := info.HasProp("input") ? true : (defaultProperties.input != false)
+    inputDefault := info.HasProp("input") && Type(info.input) == "String" ? info.input : (Type(defaultProperties.input) == "String" ? defaultProperties.input : "")
+    placeholder := info.HasProp("placeholder") ? info.placeholder : defaultProperties.placeholder
+    maskInput := info.HasProp("maskInput") ? info.maskInput : defaultProperties.maskInput
+
+    icon := info.HasProp("icon") ? info.icon : defaultProperties.icon
     iconColor := info.HasProp("iconColor") && (info.iconColor || info.iconColor == "000000") ? info.iconColor : defaultProperties.iconColor
+    
+    ; Focus Color: Defaults to Icon Color if available, otherwise Font Color
+    focusBorderColor := info.HasProp("focusBorderColor") ? info.focusBorderColor : (iconColor != "000000" && iconColor != "" ? iconColor : fontColor)
+
+    ; Progress Properties
+    prog1Val := info.HasProp("progress") && (Type(info.progress) == "Integer") ? info.progress : defaultProperties.progress
+    prog1Text := info.HasProp("progressText") ? info.progressText : defaultProperties.progressText
+    prog1SubText := info.HasProp("progressSubText") ? info.progressSubText : defaultProperties.progressSubText
+    prog1Color := info.HasProp("progressColor") ? info.progressColor : (defaultProperties.progressColor ? defaultProperties.progressColor : iconColor)
+    
+    prog2Val := info.HasProp("progress2") && (Type(info.progress2) == "Integer") ? info.progress2 : defaultProperties.progress2
+    prog2Text := info.HasProp("progress2Text") ? info.progress2Text : defaultProperties.progress2Text
+    prog2SubText := info.HasProp("progress2SubText") ? info.progress2SubText : defaultProperties.progress2SubText
+    prog2Color := info.HasProp("progress2Color") ? info.progress2Color : (defaultProperties.progress2Color ? defaultProperties.progress2Color : "888888")
+
+    hasProgress := (prog1Val != -1)
 
     buttons := info.HasProp("buttons") && info.buttons ? info.buttons : defaultProperties.buttons
     buttonColor := info.HasProp("buttonColor") && (info.buttonColor || info.buttonColor == "000000") ? info.buttonColor : defaultProperties.buttonColor ? defaultProperties.buttonColor : fontColor
+    buttonHoverColor := info.HasProp("buttonHoverColor") && (info.buttonHoverColor || info.buttonHoverColor == "000000") ? info.buttonHoverColor : defaultProperties.buttonHoverColor ? defaultProperties.buttonHoverColor : detailBorder
 
     exitEnabled := info.HasProp("exitEnabled") && info.exitEnabled == false ? false : defaultProperties.exitEnabled
     exitWidth := info.HasProp("exitWidth") && info.exitWidth ? info.exitWidth : defaultProperties.exitWidth
@@ -193,10 +255,20 @@ customDialog(info := {}, defaults := {}) {
     popupAltSound := info.HasProp("popupAltSound") && info.popupAltSound ? 0x10 : defaultProperties.popupAltSound
 
     ownerHwnd := info.HasProp("ownerHwnd") && info.ownerHwnd ? info.ownerHwnd : defaultProperties.ownerHwnd
-    waitForResponse := info.HasProp("waitForResponse") && info.waitForResponse == false ? false : defaultProperties.waitForResponse
+    
+    ; Logic for WaitForResponse: If not explicitly set by user, default to TRUE normally, but FALSE if progress bars are active.
+    if (info.HasProp("waitForResponse")) {
+        waitForResponse := info.waitForResponse
+    } else if (defaultProperties.waitForResponse != -1) {
+        waitForResponse := defaultProperties.waitForResponse
+    } else {
+        waitForResponse := hasProgress ? false : true
+    }
+    
     alwaysOnTop := info.HasProp("alwaysOnTop") && info.alwaysOnTop == false ? false : defaultProperties.alwaysOnTop
     forceParent := info.HasProp("forceParent") && info.forceParent == false ? false : defaultProperties.forceParent
     noAltF4 := info.HasProp("noAltF4") && info.noAltF4 ? true : defaultProperties.noAltF4
+    modal := info.HasProp("modal") && info.modal == false ? false : defaultProperties.modal
 
     ; Handles the `button` shorthand property for creating a single button.
     if info.HasProp("button") && !info.HasProp("buttons") {
@@ -227,6 +299,13 @@ customDialog(info := {}, defaults := {}) {
     dlg := Gui(guiOptions, title)
     dlg.BackColor := "0x" background
     dlg.SetFont("s10 c" fontColor, "Segoe UI")
+    
+    ; Map to track which controls have hover effects
+    hoverControls := Map()
+    lastHovered := 0
+    
+    ; Map to track Focus effects for Inputs/Detail
+    focusMap := Map()
     ;#endregion
 
     ;#region 3. Build Layout
@@ -238,6 +317,7 @@ customDialog(info := {}, defaults := {}) {
     btn_margin := info.HasProp("btn_margin") && info.btn_margin ? info.btn_margin : 10
 
     dialogReturn := "" ; This will store the clicked button's text upon closing.
+    inputReturn := ""
 
     currentY := 0
     dlg.SetFont("s10 c" titleColor, "Segoe UI")
@@ -251,6 +331,7 @@ customDialog(info := {}, defaults := {}) {
         dlg.SetFont("s13 c" exitColor, "Segoe UI")
         exitBtn := dlg.AddText("x" width - exitWidth " y0 w" exitWidth " h" titlebarHeight " Background" exitBG " Center +0x200", "x")
         exitBtn.OnEvent("click", ButtonClick.Bind("")) ; Clicking it returns an empty string.
+        hoverControls[exitBtn.Hwnd] := {type: "exit", def: exitBG, hov: exitBG} ; Add to hover map (just for cursor mainly, exit usually has hardcoded hover logic in some frameworks, but here we can rely on cursor)
         dlg.SetFont("s10", "Segoe UI") ; Reset font for other controls.
     }
 
@@ -282,20 +363,107 @@ customDialog(info := {}, defaults := {}) {
     contentHeight := Max(msgH, (icon ? 40 : 0))
     currentY += contentHeight + 15
 
+    ; --- Input Area (New Mode) ---
+    if hasInput {
+        inputW := width - 30
+        inputX := 15
+        inputH := 36 ; Fixed visual height (increased slightly for breathing room)
+        textH := 22  ; Actual text edit height (fits s10 font)
+        padY := (inputH - textH) // 2
+
+        inputOptions := " -VScroll Background" backgroundAlt " c" detailColor " -E0x200"
+        if maskInput
+            inputOptions .= " Password"
+
+        ; 1. Add Decorative Border (Bottom Layer)
+        inputBorder := dlg.AddText("x" (inputX - 1) " y" (currentY - 1) " w" (inputW + 2) " h" (inputH+2) " Background" detailBorder " -E0x200")
+
+        ; 2. Add Background Fill (Middle Layer) - Prevents border color from showing through top/bottom gaps
+        dlg.AddText("x" inputX " y" currentY " w" inputW " h" inputH " Background" backgroundAlt " -E0x200")
+
+        ; 3. Add The Input Control (Top Layer) - Vertically centered
+        inputCtrl := dlg.AddEdit("x" inputX " y" (currentY + padY) " w" inputW " h" textH " " inputOptions)
+        inputCtrl.Value := inputDefault
+        
+        ; Placeholder Text (Cue Banner)
+        if (placeholder != "") {
+             SendMessage(0x1501, 1, StrPtr(placeholder), inputCtrl.Hwnd) ; EM_SETCUEBANNER
+        }
+        
+        ; Register for Focus Highlight
+        focusMap[inputCtrl.Hwnd] := inputBorder
+
+        currentY += inputH + 15
+    }
+
+    ; --- Progress Bars (New Mode) ---
+    if hasProgress {
+        progW := width - 30
+        progX := 15
+        
+        ; Main Status Text
+        if (prog1Text != "") {
+            progTextCtrl1 := dlg.AddText("x" progX " y" currentY " w" progW " c" messageColor, prog1Text)
+            currentY += 20
+        }
+
+        ; Main Sub Status Text
+        if (prog1SubText != "") {
+            dlg.SetFont("s9 c999999")
+            progSubTextCtrl1 := dlg.AddText("x" progX " y" currentY " w" progW, prog1SubText)
+            dlg.SetFont("s10 c" fontColor)
+            currentY += 20
+        }
+        
+        ; Main Progress Bar
+        ; Note: cColor controls bar color, BackgroundColor controls empty space.
+        progCtrl1 := dlg.AddProgress("x" progX " y" currentY " w" progW " h10 c" prog1Color " Background" backgroundAlt, prog1Val)
+        currentY += 20
+        
+        ; Secondary Progress Bar
+        if (prog2Val != -1) {
+            currentY += 10 ; Gap between bars
+            
+            ; Secondary Status Text
+            if (prog2Text != "") {
+                progTextCtrl2 := dlg.AddText("x" progX " y" currentY " w" progW " c" messageColor, prog2Text)
+                currentY += 20
+            }
+
+            ; Secondary Sub Status Text
+            if (prog2SubText != "") {
+                dlg.SetFont("s9 c999999")
+                progSubTextCtrl2 := dlg.AddText("x" progX " y" currentY " w" progW, prog2SubText)
+                dlg.SetFont("s10 c" fontColor)
+                currentY += 20
+            }
+            
+            progCtrl2 := dlg.AddProgress("x" progX " y" currentY " w" progW " h8 c" prog2Color " Background" backgroundAlt, prog2Val)
+            currentY += 15
+        }
+        currentY += 10 ; Bottom padding
+    }
+
     ; --- Detail Text Area (if specified) ---
     if detail {
         detailW := width - 30
         detailX := 15
-
-        ; Add a decorative border behind the Edit control. It's added first to appear underneath.
         
-        ; The Edit control for the detailed text.
+        ; Create a temporary dummy edit to get exact height calculation
+        dummyEdit := dlg.AddEdit("x" detailX " y" currentY " w" detailW " r" detailRows " ReadOnly -TabStop -VScroll Background" backgroundAlt " c" detailColor " -E0x200 Hidden")
+        dummyEdit.GetPos(,,, &editH)
+        DllCall("DestroyWindow", "Ptr", dummyEdit.Hwnd)
+
+        ; 1. Add Decorative Border (Bottom Layer)
+        detailBorderCtrl := dlg.AddText("x" (detailX - 1) " y" (currentY - 1) " w" (detailW + 2) " h" (editH+2) " Background" detailBorder " -E0x200")
+
+        ; 2. Add The Edit Control (Top Layer)
         editCtrl := dlg.AddEdit("x" detailX " y" currentY " w" detailW " r" detailRows " ReadOnly -TabStop -VScroll Background" backgroundAlt " c" detailColor " -E0x200")
         editCtrl.Value := detail
-        editCtrl.GetPos(,,, &editH)
-
-        dlg.AddText("x" (detailX - 1) " y" (currentY - 1) " w" (detailW + 2) " h" (editH+2) " Background" detailBorder " -E0x200")
-
+        
+        ; Register for Focus Highlight
+        focusMap[editCtrl.Hwnd] := detailBorderCtrl
+        
         currentY += editH + 15
     }
     ;#endregion
@@ -327,6 +495,9 @@ customDialog(info := {}, defaults := {}) {
         ; Button (a styled, clickable Text control).
         btnCtrl := dlg.AddText("x" currentX " y" btnY " w" btn_w " h" btn_h " +Tabstop Background" backgroundAlt " Center 0x8000 +0x200", btnText)
         btnCtrl.OnEvent("Click", ButtonClick.Bind(returnValue))
+        
+        ; Add to hover map
+        hoverControls[btnCtrl.Hwnd] := {type: "btn", def: backgroundAlt, hov: buttonHoverColor}
 
         ; The first button is the default action for the "Enter" key.
         if (i = 1) {
@@ -343,33 +514,121 @@ customDialog(info := {}, defaults := {}) {
 
     ; This message handler allows the GUI to be dragged by its custom title bar.
     HandleNCHitTest(wParam, lParam, msg, hwnd) {
-        if (hwnd != dlg.Hwnd) {
-            return ; Message is not for this GUI.
+        try{
+            if (hwnd != dlg.Hwnd) {
+                return ; Message is not for this GUI.
+            }
+            lParamY := lParam >> 16
+            dlg.GetPos(,&winY)
+            ; Check if the cursor is within the title bar's vertical area.
+            if (lParamY >= winY && lParamY < winY + (titlebarHeight - 1)) {
+                PostMessage(0x00A1, 2) ; WM_NCLBUTTONDOWN, HTCAPTION (tells Windows to treat it as a click on the caption bar).
+            }
         }
-        lParamY := lParam >> 16
-        dlg.GetPos(,&winY)
-        ; Check if the cursor is within the title bar's vertical area.
-        if (lParamY >= winY && lParamY < winY + (titlebarHeight - 1)) {
-            PostMessage(0x00A1, 2) ; WM_NCLBUTTONDOWN, HTCAPTION (tells Windows to treat it as a click on the caption bar).
+    }
+    
+    ; Handles MouseMove for Hover Effects and Cursors
+    HandleMouseMove(wParam, lParam, msg, hwnd) {
+        MouseGetPos(,, &id, &controlHwnd, 2)
+        
+        if (hoverControls.Has(controlHwnd)) {
+            ; Set Hand Cursor
+            DllCall("SetCursor", "Ptr", DllCall("LoadCursor", "Ptr", 0, "Int", 32649, "Ptr")) ; IDC_HAND = 32649
+            
+            ; Handle Color Change
+            if (lastHovered != controlHwnd) {
+                ; Restore previous if needed
+                if (lastHovered && hoverControls.Has(lastHovered) && hoverControls[lastHovered].type != "exit") {
+                     GuiCtrlFromHwnd(lastHovered).Opt("Background" hoverControls[lastHovered].def)
+                     GuiCtrlFromHwnd(lastHovered).Redraw()
+                }
+                
+                ; Highlight current
+                if (hoverControls[controlHwnd].type != "exit") {
+                    GuiCtrlFromHwnd(controlHwnd).Opt("Background" hoverControls[controlHwnd].hov)
+                    GuiCtrlFromHwnd(controlHwnd).Redraw()
+                }
+                
+                lastHovered := controlHwnd
+            }
+        } else {
+            ; Reset if we moved off a button
+            if (lastHovered) {
+                if (hoverControls.Has(lastHovered) && hoverControls[lastHovered].type != "exit") {
+                    GuiCtrlFromHwnd(lastHovered).Opt("Background" hoverControls[lastHovered].def)
+                    GuiCtrlFromHwnd(lastHovered).Redraw()
+                }
+                lastHovered := 0
+            }
+        }
+    }
+
+    ; Handle Focus Events (Highlight Border)
+    OnCtrlFocus(ctrl, *) {
+        if focusMap.Has(ctrl.Hwnd) {
+            focusMap[ctrl.Hwnd].Opt("Background" focusBorderColor)
+            focusMap[ctrl.Hwnd].Redraw()
+        }
+    }
+
+    OnCtrlLoseFocus(ctrl, *) {
+        if focusMap.Has(ctrl.Hwnd) {
+            focusMap[ctrl.Hwnd].Opt("Background" detailBorder)
+            focusMap[ctrl.Hwnd].Redraw()
+        }
+    }
+
+    ; Function to update progress bars/text from the return object
+    UpdateProgress(percent := "", text := "", subText := "", bar := 1) {
+        if (bar == 1) {
+            if (percent != "") && IsSet(progCtrl1)
+                progCtrl1.Value := percent
+            if (text != "") && IsSet(progTextCtrl1)
+                progTextCtrl1.Text := text
+            if (subText != "") && IsSet(progSubTextCtrl1)
+                progSubTextCtrl1.Text := subText
+        } else if (bar == 2) {
+            if (percent != "") && IsSet(progCtrl2)
+                progCtrl2.Value := percent
+            if (text != "") && IsSet(progTextCtrl2)
+                progTextCtrl2.Text := text
+            if (subText != "") && IsSet(progSubTextCtrl2)
+                progSubTextCtrl2.Text := subText
         }
     }
 
     ; Central cleanup function to destroy hotkeys, message handlers, and the GUI.
     CleanupAndDestroy(*) {
-        Hotkey("Enter", "Off")
-        if (exitEnabled == true)
-            Hotkey("Escape", "Off")
-
-        if (noAltF4 == true)
-            Hotkey("!F4", "Off")
-
+        try{
+            Hotkey("Enter", "Off")
+        }
+        try{
+            if (exitEnabled == true)
+                Hotkey("Escape", "Off")
+        }
+        try{
+            if (noAltF4 == true)
+                Hotkey("!F4", "Off")
+        }
+        ; Re-enable parent window if it was disabled (Modal behavior cleanup)
+        if (ownerHwnd && modal && DllCall("IsWindow", "Ptr", ownerHwnd)) {
+            try WinSetEnabled(true, ownerHwnd)
+            try WinActivate(ownerHwnd)
+        }
         OnMessage(0x84, HandleNCHitTest, 0) ; Turn off message handler.
+        OnMessage(0x0200, HandleMouseMove, 0) ; Turn off hover handler
         dlg.Destroy()
     }
 
     ; Handles clicks on any button.
     ButtonClick(returnValue, *) {
         dialogReturn := returnValue
+        
+        ; Capture Input Value
+        if (IsSet(inputCtrl) && inputCtrl) {
+            inputReturn := inputCtrl.Value
+        }
+        
         CleanupAndDestroy()
     }
 
@@ -385,17 +644,39 @@ customDialog(info := {}, defaults := {}) {
 
     ; Register the message handler and GUI events.
     OnMessage(0x84, HandleNCHitTest) ; WM_NCHITTEST for draggable title bar.
+    OnMessage(0x0200, HandleMouseMove) ; WM_MOUSEMOVE for hover effects
     dlg.OnEvent("Close", CleanupAndDestroy) ; Handles closing via system menu, Alt+F4 (if enabled), etc.
+    
+    ; Bind Focus Events if we have inputs
+    if (focusMap.Count > 0) {
+        for ctrlHwnd, border in focusMap {
+            ctrl := GuiCtrlFromHwnd(ctrlHwnd)
+            ctrl.OnEvent("Focus", OnCtrlFocus)
+            ctrl.OnEvent("LoseFocus", OnCtrlLoseFocus)
+        }
+    }
     ;#endregion
 
     ;#region 6. Show & Configure Focused Control
     ; Final steps before the dialog is displayed.
+
+    ; Disable parent window if modal
+    if (ownerHwnd && modal && DllCall("IsWindow", "Ptr", ownerHwnd)) {
+        WinSetEnabled(false, ownerHwnd)
+    }
 
     dlg.Show("w" width " h" finalHeight " Center")
     ; If a detail box exists, its Z-order needs to be managed to appear on top of its border.
     ; Focusing it and then focusing the button seems to be a reliable way to do this.
     if (IsSet(editCtrl) && IsObject(editCtrl)) {
         ControlFocus(editCtrl.Hwnd, dlg.Hwnd)
+        ControlFocus(firstBtnCtrl.Hwnd, dlg.Hwnd)
+    }
+    
+    ; If input exists, focus it by default (standard behavior for input boxes)
+    if (IsSet(inputCtrl) && IsObject(inputCtrl)) {
+        ControlFocus(inputCtrl.Hwnd, dlg.Hwnd)
+    } else if (IsSet(firstBtnCtrl) && IsObject(firstBtnCtrl)) {
         ControlFocus(firstBtnCtrl.Hwnd, dlg.Hwnd)
     }
     ;#endregion
@@ -436,7 +717,9 @@ customDialog(info := {}, defaults := {}) {
 
     return {
         value: dialogReturn,
-        gui: dlg
+        input: inputReturn,
+        gui: dlg,
+        Update: UpdateProgress
     }
     ;#endregion
 
