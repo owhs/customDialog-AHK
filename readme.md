@@ -3,7 +3,7 @@ __customDialog - *v1.8*__
 
 **Example images below!**
 
-**Example images not showcasing full functionality!**
+**Example images not showcasing full functionality! (mainly inputs and progress bars)**
 
 
 - Creates a highly customizable dialog box.
