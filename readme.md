@@ -97,3 +97,13 @@ customDialog({
 ![eg1](.github/eg1.png)
 ![eg3](.github/eg3.png)
 ![eg4](.github/eg4.png)
+![eg3](.github/eg5.png)
+![eg4](.github/eg6.png)
+
+
+## Generator Tool screenshots:
+
+![eg2](.github/gen1.png)
+![eg1](.github/gen2.png)
+![eg3](.github/gen3.png)
+![eg4](.github/gen4.png)
